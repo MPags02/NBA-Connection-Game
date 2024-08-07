@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NBA Connection Game Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding: 50px;
+        }
+        .result-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        .result-container p {
+            font-size: 18px;
+        }
+        .result-container a {
+            display: block;
+            margin-top: 20px;
+            text-decoration: none;
+            color: #007BFF;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+        .player-image {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <p>Rounds: {{ rounds }}</p>
+        <p>Successes: {{ successes }}</p>
+        <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
+    </div>
+    <h1>NBA Connection Game Result</h1>
+    <div class="result-container">
+        <p>{{ result }}</p>
+        {% if win %}
+            <div class="player-image">
+                <img src="{{ guessed_teammate_image }}" alt="Guessed Player Image" width="200" height="150">
+            </div>
+        {% else %}
+            <div class="player-image">
+                <p>One correct answer: {{ correct_teammate_name }}</p>
+                <img src="{{ correct_teammate_image }}" alt="Correct Teammate Image" width="200" height="150">
+            </div>
+        {% endif %}
+        <a href="{{ url_for('index') }}">Play Again</a>
+    </div>
+</body>
+</html>

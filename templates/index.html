@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NBA Connection Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding: 50px;
+        }
+        .player-card {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .player-card img {
+            border-radius: 50%;
+            width: 200px;
+            height: 150px;
+        }
+        .player-card h2 {
+            margin: 10px 0;
+        }
+        .form-container {
+            margin-top: 30px;
+            position: relative; /* Added to position suggestions relative to this container */
+        }
+        .form-container input, .form-container button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .autocomplete-suggestions {
+            border: 1px solid #e4e4e4;
+            background: #fff;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            z-index: 1000;
+            left: 0; /* Adjust to position correctly under the input field */
+            width: calc(100% - 20px); /* Match the width of the input field */
+        }
+        .autocomplete-suggestion {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .autocomplete-suggestion:hover {
+            background: #e4e4e4;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <p>Rounds: {{ rounds }}</p>
+        <p>Successes: {{ successes }}</p>
+        <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
+    </div>
+    <h1>NBA Connection Game</h1>
+    <div class="player-card">
+        <img src="{{ player1_image }}" alt="{{ player1_name }}">
+        <h2>{{ player1_name }}</h2>
+    </div>
+    <div class="player-card">
+        <img src="{{ player2_image }}" alt="{{ player2_name }}">
+        <h2>{{ player2_name }}</h2>
+    </div>
+    <div class="form-container">
+        <form action="{{ url_for('guess') }}" method="post">
+            <input type="hidden" name="player1_name" value="{{ player1_name }}">
+            <input type="hidden" name="player2_name" value="{{ player2_name }}">
+            <label for="guessed_teammate">Enter the name of the common teammate:</label>
+            <input type="text" id="guessed_teammate" name="guessed_teammate" autocomplete="off">
+            <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const input = document.getElementById('guessed_teammate');
+            const suggestionsBox = document.getElementById('autocomplete-suggestions');
+            let playerNames = [];
+
+            fetch('/players')
+                .then(response => response.json())
+                .then(data => playerNames = data);
+
+            input.addEventListener('input', function () {
+                const query = this.value.toLowerCase();
+                suggestionsBox.innerHTML = '';
+
+                if (query.length > 0) {
+                    const filteredNames = playerNames.filter(name => name.toLowerCase().includes(query));
+                    filteredNames.forEach(name => {
+                        const div = document.createElement('div');
+                        div.classList.add('autocomplete-suggestion');
+                        div.textContent = name;
+                        div.addEventListener('click', function () {
+                            input.value = name;
+                            suggestionsBox.innerHTML = '';
+                        });
+                        suggestionsBox.appendChild(div);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
