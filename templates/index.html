@@ -27,7 +27,7 @@
         }
         .form-container {
             margin-top: 30px;
-            position: relative; /* Added to position suggestions relative to this container */
+            position: relative;
         }
         .form-container input, .form-container button {
             padding: 10px;
@@ -41,8 +41,8 @@
             overflow-y: auto;
             position: absolute;
             z-index: 1000;
-            left: 0; /* Adjust to position correctly under the input field */
-            width: calc(100% - 20px); /* Match the width of the input field */
+            left: 0;
+            width: calc(100% - 20px);
         }
         .autocomplete-suggestion {
             padding: 10px;
@@ -90,7 +90,7 @@
             const suggestionsBox = document.getElementById('autocomplete-suggestions');
             let playerNames = [];
 
-            fetch('/{{ sport }}/players')
+            fetch(`/${sport}/players`)
                 .then(response => response.json())
                 .then(data => playerNames = data);
 

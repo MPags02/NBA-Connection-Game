@@ -6,7 +6,7 @@ from nba_api.stats.endpoints import commonplayerinfo, playercareerstats, commont
 from nba_api.stats.static import players as nba_players
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a strong secret key
+app.secret_key = 'your_secret_key'
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 @cache.memoize(60*60)  # Cache for 1 hour
@@ -24,12 +24,10 @@ def get_player_image(player_id, sport):
     if sport == 'nba':
         return f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
     else:
-        players_df = nfl.import_seasonal_rosters([2023])
-        player = players_df[players_df['player_id'] == player_id]
-        return player['headshot_url'].values[0] if not player.empty else ""
+        return f"https://www.pro-football-reference.com/players/{player_id[0]}/{player_id}.jpg"
 
 @cache.memoize(60*60)  # Cache for 1 hour
-def get_player_teammates(player_id, sport, season=None):
+def get_player_teammates(player_id, sport):
     teammates = set()
     if sport == 'nba':
         career_stats = playercareerstats.PlayerCareerStats(player_id=player_id)
@@ -39,32 +37,29 @@ def get_player_teammates(player_id, sport, season=None):
             roster = get_team_roster(team, sport)
             teammates.update(roster)
     else:  # nfl
-        players_df = nfl.import_seasonal_rosters([season or 2023])
-        team_id = players_df[players_df['player_id'] == player_id]['team'].values[0]
-        team_roster = players_df[players_df['team'] == team_id]
-        teammates = set(team_roster['player_id'].values)
-        teammates.discard(player_id)
+        rosters = nfl.import_seasonal_rosters([2023])
+        player_team = rosters[rosters['player_id'] == player_id]['team'].values[0]
+        teammates = set(rosters[rosters['team'] == player_team]['player_id'].tolist())
     return teammates
 
 @cache.memoize(60*60)  # Cache for 1 hour
-def get_team_roster(team_id, sport, season=None):
+def get_team_roster(team_id, sport):
     player_ids = []
     if sport == 'nba':
         roster = commonteamroster.CommonTeamRoster(team_id=team_id).get_data_frames()[0]
         player_ids = roster['PLAYER_ID'].tolist()
     else:  # nfl
-        players_df = nfl.import_seasonal_rosters([season or 2023])
-        team_roster = players_df[players_df['team'] == team_id]
-        player_ids = team_roster['player_id'].tolist()
+        rosters = nfl.import_seasonal_rosters([2023])
+        player_ids = rosters[rosters['team'] == team_id]['player_id'].tolist()
     return player_ids
 
 @cache.memoize(60*60)  # Cache for 1 hour
-def get_active_player_ids(sport, season=None):
+def get_active_player_ids(sport):
     if sport == 'nba':
         player_dict = nba_players.get_active_players()
         return [player['id'] for player in player_dict]
     else:  # nfl
-        players_df = nfl.import_seasonal_rosters([season or 2023])
+        players_df = nfl.import_seasonal_rosters([2023])
         return players_df['player_id'].tolist()
 
 @app.route('/')
@@ -100,8 +95,8 @@ def get_players(sport):
         player_dict = nba_players.get_players()
         player_names = [player['full_name'] for player in player_dict]
     else:
-        players_df = nfl.import_seasonal_rosters([2023])
-        player_names = players_df['player_name'].tolist()
+        rosters = nfl.import_seasonal_rosters([2023])
+        player_names = rosters['player_name'].tolist()
     return jsonify(player_names)
 
 @app.route('/<sport>/guess', methods=['POST'])
