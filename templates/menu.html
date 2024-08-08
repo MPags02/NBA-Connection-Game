@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sports Connection Game Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding: 50px;
+        }
+        .menu-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+        }
+        .menu-container h1 {
+            margin-bottom: 20px;
+        }
+        .menu-container a {
+            display: block;
+            margin: 10px;
+            padding: 10px;
+            text-decoration: none;
+            color: #007BFF;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .menu-container a:hover {
+            background: #e4e4e4;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-container">
+        <h1>Sports Connection Game</h1>
+        <a href="{{ url_for('index', sport='nba') }}">NBA Mode</a>
+        <a href="{{ url_for('index', sport='nfl') }}">NFL Mode</a>
+    </div>
+</body>
+</html>

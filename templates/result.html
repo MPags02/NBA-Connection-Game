@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NBA Connection Game Result</title>
+    <title>{{ sport.upper() }} Connection Game Result</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -42,7 +42,7 @@
         <p>Successes: {{ successes }}</p>
         <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
     </div>
-    <h1>NBA Connection Game Result</h1>
+    <h1>{{ sport.upper() }} Connection Game Result</h1>
     <div class="result-container">
         <p>{{ result }}</p>
         {% if win %}
@@ -55,7 +55,7 @@
                 <img src="{{ correct_teammate_image }}" alt="Correct Teammate Image" width="200" height="150">
             </div>
         {% endif %}
-        <a href="{{ url_for('index') }}">Play Again</a>
+        <a href="{{ url_for('index', sport=sport) }}">Play Again</a>
     </div>
 </body>
 </html>

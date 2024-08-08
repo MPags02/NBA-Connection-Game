@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>NBA Connection Game</title>
+    <title>{{ sport.upper() }} Connection Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,7 +65,7 @@
         <p>Successes: {{ successes }}</p>
         <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
     </div>
-    <h1>NBA Connection Game</h1>
+    <h1>{{ sport.upper() }} Connection Game</h1>
     <div class="player-card">
         <img src="{{ player1_image }}" alt="{{ player1_name }}">
         <h2>{{ player1_name }}</h2>
@@ -75,7 +75,7 @@
         <h2>{{ player2_name }}</h2>
     </div>
     <div class="form-container">
-        <form action="{{ url_for('guess') }}" method="post">
+        <form action="{{ url_for('guess', sport=sport) }}" method="post">
             <input type="hidden" name="player1_name" value="{{ player1_name }}">
             <input type="hidden" name="player2_name" value="{{ player2_name }}">
             <label for="guessed_teammate">Enter the name of the common teammate:</label>
@@ -90,7 +90,7 @@
             const suggestionsBox = document.getElementById('autocomplete-suggestions');
             let playerNames = [];
 
-            fetch('/players')
+            fetch('/{{ sport }}/players')
                 .then(response => response.json())
                 .then(data => playerNames = data);
 
