@@ -45,15 +45,17 @@
     <h1>NBA Connection Game Result</h1>
     <div class="result-container">
         <p>{{ result }}</p>
-        {% if win %}
+        {% if win and question_type == 'teammate' %}
             <div class="player-image">
                 <img src="{{ guessed_teammate_image }}" alt="Guessed Player Image" width="200" height="150">
             </div>
-        {% else %}
+        {% elif not win and question_type == 'teammate' %}
             <div class="player-image">
                 <p>One correct answer: {{ correct_teammate_name }}</p>
                 <img src="{{ correct_teammate_image }}" alt="Correct Teammate Image" width="200" height="150">
             </div>
+        {% elif not win and question_type == 'team_and_year' %}
+            <p>{{ result }}</p>
         {% endif %}
         <a href="{{ url_for('index') }}">Play Again</a>
     </div>

@@ -75,44 +75,126 @@
         <h2>{{ player2_name }}</h2>
     </div>
     <div class="form-container">
+<<<<<<< Updated upstream
         <form action="{{ url_for('guess') }}" method="post">
             <input type="hidden" name="player1_name" value="{{ player1_name }}">
             <input type="hidden" name="player2_name" value="{{ player2_name }}">
+=======
+    <form action="{{ url_for('guess', sport=sport) }}" method="post">
+        <input type="hidden" name="player1_name" value="{{ player1_name }}">
+        <input type="hidden" name="player2_name" value="{{ player2_name }}">
+        
+        {% if question_type == 'teammate' %}
+>>>>>>> Stashed changes
             <label for="guessed_teammate">Enter the name of the common teammate:</label>
             <input type="text" id="guessed_teammate" name="guessed_teammate" autocomplete="off">
-            <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
-            <button type="submit">Submit</button>
-        </form>
-    </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const input = document.getElementById('guessed_teammate');
-            const suggestionsBox = document.getElementById('autocomplete-suggestions');
-            let playerNames = [];
+        {% elif question_type == 'team_and_year' %}
+            <label for="guessed_team">Enter the team and year they played together:</label>
+            <input type="text" id="guessed_team" name="guessed_team" placeholder="Team Name" autocomplete="off">
+            <input type="text" id="guessed_year" name="guessed_year" placeholder="Year" autocomplete="off">
+        {% endif %}
+        
+        <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
+        <button type="submit">Submit</button>
+    </form>
+</div>
 
+<<<<<<< Updated upstream
             fetch('/players')
                 .then(response => response.json())
                 .then(data => playerNames = data);
+=======
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const teamInput = document.getElementById('guessed_team');
+    const yearInput = document.getElementById('guessed_year');
+    const playerInput = document.getElementById('guessed_teammate');
+    const suggestionsBox = document.getElementById('autocomplete-suggestions');
+    
+    let teams = [];
+    let years = [];
+    let playerNames = [];
+>>>>>>> Stashed changes
 
-            input.addEventListener('input', function () {
-                const query = this.value.toLowerCase();
-                suggestionsBox.innerHTML = '';
-
-                if (query.length > 0) {
-                    const filteredNames = playerNames.filter(name => name.toLowerCase().includes(query));
-                    filteredNames.forEach(name => {
-                        const div = document.createElement('div');
-                        div.classList.add('autocomplete-suggestion');
-                        div.textContent = name;
-                        div.addEventListener('click', function () {
-                            input.value = name;
-                            suggestionsBox.innerHTML = '';
-                        });
-                        suggestionsBox.appendChild(div);
-                    });
-                }
-            });
+    fetch('/nba/teams-and-years')
+        .then(response => response.json())
+        .then(data => {
+            teams = data.teams;
+            years = data.years;
         });
-    </script>
+
+    fetch('/nba/players')
+        .then(response => response.json())
+        .then(data => {
+            playerNames = data;
+        });
+
+    if (teamInput) {
+        teamInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredTeams = teams.filter(name => name.toLowerCase().includes(query));
+                filteredTeams.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        teamInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredYears = years.filter(year => year.includes(query));
+                filteredYears.forEach(year => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = year;
+                    div.addEventListener('click', function () {
+                        yearInput.value = year;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
+    if (playerInput) {
+        playerInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredPlayers = playerNames.filter(name => name.toLowerCase().includes(query));
+                filteredPlayers.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        playerInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+});
+
+</script>
+
+
 </body>
 </html>
