@@ -9,13 +9,33 @@
             text-align: center;
             padding: 50px;
         }
+        .player-card {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .player-card img {
+            border-radius: 50%;
+            width: 200px;
+            height: 150px;
+        }
+
+        .player-card h2 {
+            margin: 10px 0;
+        }
         .result-container {
+            margin-top: 30px;
             background: #fff;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             display: inline-block;
+            min-height: 400px; /* Adjust this value as needed */
         }
+
         .result-container p {
             font-size: 18px;
         }
@@ -31,9 +51,6 @@
             right: 20px;
             text-align: right;
         }
-        .player-image {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -44,20 +61,30 @@
     </div>
     <h1>NBA Connection Game Result</h1>
     <div class="result-container">
+       
+       
+        
+
+        
+
         <p>{{ result }}</p>
+        <img src="{{ display_image }}" alt="Display Image" style="width: 250px; height: auto;">
         {% if win and question_type == 'teammate' %}
-            <div class="player-image">
-                <img src="{{ guessed_teammate_image }}" alt="Guessed Player Image" width="200" height="150">
+            <div class="player-card">
+                <img src="{{ guessed_teammate_image }}" alt="Guessed Player Image">
+                <h2>{{ guessed_teammate }}</h2>
             </div>
         {% elif not win and question_type == 'teammate' %}
-            <div class="player-image">
+            <div class="player-card">
+                <img src="{{ correct_teammate_image }}" alt="Correct Teammate Image">
+                <h2>{{ correct_teammate_name }}</h2>
                 <p>One correct answer: {{ correct_teammate_name }}</p>
-                <img src="{{ correct_teammate_image }}" alt="Correct Teammate Image" width="200" height="150">
             </div>
         {% elif not win and question_type == 'team_and_year' %}
             <p>{{ result }}</p>
         {% endif %}
         <a href="{{ url_for('index') }}">Play Again</a>
     </div>
+
 </body>
 </html>
