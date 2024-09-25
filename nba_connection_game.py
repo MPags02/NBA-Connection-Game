@@ -1,65 +1,16 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_caching import Cache
 import random
-<<<<<<< Updated upstream
-import requests
-from nba_api.stats.endpoints import commonplayerinfo, playercareerstats, commonteamroster
-from nba_api.stats.static import players
-=======
-import nfl_data_py as nfl
 from nba_api.stats.endpoints import commonplayerinfo, playercareerstats, commonteamroster, teamdetails
 from nba_api.stats.static import players as nba_players
 import json
 import logging
 import os
->>>>>>> Stashed changes
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a strong secret key
+app.secret_key = 'your_secret_key'
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-<<<<<<< Updated upstream
-# Get player ID by name (note for commit)
-@cache.memoize(60*60)  # Cache for 1 hour
-def get_player_id(player_name):
-    player_dict = players.get_players()
-    player = next((player for player in player_dict if player['full_name'].lower() == player_name.lower()), None)
-    if player:
-        return player['id']
-    else:
-        return None
-
-# Get player image URL
-def get_player_image(player_id):
-    return f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
-
-# Get teammates of a player
-@cache.memoize(60*60)  # Cache for 1 hour
-def get_player_teammates(player_id):
-    career_stats = playercareerstats.PlayerCareerStats(player_id=player_id)
-    team_data = career_stats.get_data_frames()[0]  # Regular season stats
-    teams = team_data['TEAM_ID'].unique()
-    teammates = set()
-    for team in teams:
-        roster = get_team_roster(team)
-        teammates.update(roster)
-    return teammates
-
-# Get roster of a team by team ID
-@cache.memoize(60*60)  # Cache for 1 hour
-def get_team_roster(team_id):
-    roster = commonteamroster.CommonTeamRoster(team_id=team_id).get_data_frames()[0]
-    player_ids = roster['PLAYER_ID'].tolist()
-    return player_ids
-=======
-# Load cached team rosters from JSON file
-with open('all_team_rosters.json', 'r') as f:
-    all_team_rosters = json.load(f)
-
-
-import os
-from nba_api.stats.endpoints import commonteamroster
-import json
 
 def cache_all_team_rosters():
     start_year = 2000
@@ -85,14 +36,11 @@ def cache_all_team_rosters():
 
 @cache.memoize(60*60)  # Cache for 1 hour
 def get_player_id(player_name, sport):
-    if sport == 'nba':
-        player_dict = nba_players.get_players()
-        player = next((player for player in player_dict if player['full_name'].lower() == player_name.lower()), None)
-        return player['id'] if player else None
-    else:  # nfl
-        players_df = nfl.import_seasonal_rosters([2023])
-        player = players_df[players_df['player_name'].str.lower() == player_name.lower()]
-        return player['player_id'].values[0] if not player.empty else None
+    sport == 'nba'
+    player_dict = nba_players.get_players()
+    player = next((player for player in player_dict if player['full_name'].lower() == player_name.lower()), None)
+    return player['id'] if player else None
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -107,6 +55,16 @@ def get_player_image(player_id, sport):
     return url
 
 
+@cache.memoize(60*60)  # Cache for 1 hour
+def get_team_roster(team_id, season, sport):
+    player_ids = []
+    if sport == 'nba':
+        roster = commonteamroster.CommonTeamRoster(team_id=team_id, season=season).get_data_frames()[0]
+        player_ids = roster['PLAYER_ID'].tolist()
+  
+        
+    return player_ids
+
 @cache.memoize(60*60)
 def get_player_teammates(player_id, sport):
     teammates = set()
@@ -118,15 +76,11 @@ def get_player_teammates(player_id, sport):
         for _, row in team_data.iterrows():
             team_id = row['TEAM_ID']
             season = row['SEASON_ID']
-            roster = get_team_roster(team_id, season)
+            roster = get_team_roster(team_id, season, sport)
             teammates.update(roster)
-    else:  # nfl
-        rosters = nfl.import_seasonal_rosters([2023])
-        player_team = rosters[rosters['player_id'] == player_id]['team'].values[0]
-        teammates = set(rosters[rosters['team'] == player_team]['player_id'].tolist())
+  
     
     return teammates
-
 
 
 import random
@@ -134,12 +88,15 @@ import random
 def find_two_players_with_common_teammate(sport):
     active_player_ids = get_active_player_ids(sport)
     
+    # Step 1: Select the first player and retrieve their teammates
     player1_id = random.choice(active_player_ids)
     player1_teammates = get_player_teammates(player1_id, sport)
     
+    # Step 2: Shuffle the list of active players to randomize the order for Player 2 selection
     potential_player2_ids = active_player_ids[:]
     random.shuffle(potential_player2_ids)
     
+    # Step 3: Iterate through shuffled players to find one with a common teammate
     for player2_id in potential_player2_ids:
         if player2_id == player1_id:
             continue
@@ -150,6 +107,7 @@ def find_two_players_with_common_teammate(sport):
         if common_teammates:
             return player1_id, player2_id, common_teammates
     
+    # If no common teammate is found, try again (this should be rare)
     return find_two_players_with_common_teammate(sport)
 
 
@@ -157,38 +115,13 @@ def find_two_players_with_common_teammate(sport):
 
 
 
-@cache.memoize(60*60)
-def get_team_roster(team_id, season):
-    # Use cached rosters instead of calling the API
-    season_str = str(season)  # Ensure the season is in string format like '2000-01'
-    if season_str in all_team_rosters and str(team_id) in all_team_rosters[season_str]:
-        roster = all_team_rosters[season_str][str(team_id)]
-        return [player['PLAYER_ID'] for player in roster]
-    else:
-        return []
-
->>>>>>> Stashed changes
-
-# Filter active players
 @cache.memoize(60*60)  # Cache for 1 hour
-def get_active_player_ids():
-    player_dict = players.get_active_players()
-    active_player_ids = [player['id'] for player in player_dict]
-    return active_player_ids
+def get_active_player_ids(sport):
+    if sport == 'nba':
+        player_dict = nba_players.get_active_players()
+        return [player['id'] for player in player_dict]
 
-<<<<<<< Updated upstream
-# New route to get player names
-@app.route('/players')
-@cache.memoize(60*60)  # Cache for 1 hour
-def get_players():
-    player_dict = players.get_players()
-    player_names = [player['full_name'] for player in player_dict]
-    return jsonify(player_names)
 
-# Find two players with common teammates
-def find_two_players_with_common_teammate():
-    active_player_ids = get_active_player_ids()
-=======
 @app.route('/')
 def menu():
     return render_template('menu.html')
@@ -207,16 +140,37 @@ def index():
         session['successes'] = 0
 
     # Alternate between question types
-    question_type = random.choice(['teammate', 'team_and_year'])
+    question_type = random.choice(['teammate', 'team_and_year', 'headshot']) #add question guess player from image
+    #question_type = 'headshot' #testing
     
     if question_type == 'teammate':
         player1_id, player2_id, common_teammates = find_two_players_with_common_teammate('nba')
         session['question_type'] = 'teammate'
         session['common_teammates'] = list(common_teammates)
-    else:
+    elif question_type == 'team_and_year':
         player1_id, player2_id, common_team_years = find_two_players_with_common_team_and_year()
         session['question_type'] = 'team_and_year'
         session['common_team_years'] = common_team_years  # Store the list of common team years
+    elif question_type == 'headshot':
+            # Step 1: Get a list of active NBA players
+        active_player_ids = get_active_player_ids('nba')
+
+        # Step 2: Randomly select one player's ID
+        player_id = random.choice(active_player_ids)
+
+        # Step 3: Set the question type in session and store the player ID
+        session['question_type'] = 'headshot'
+        session['player_id'] = player_id
+
+        # Step 4: Retrieve player information
+        player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id).common_player_info.get_dict()['data'][0]
+        player_name = player_info[3]
+
+        # Step 5: Get player image URL
+        player_image = get_player_image(player_id, 'nba')
+
+        # Step 6: Render the page with player image and question details
+        return render_template('index.html', sport='nba', player_name=player_name, player_image=player_image, rounds=session['rounds'], successes=session['successes'], question_type=question_type)
 
     # Get player info for display
     player1_info = commonplayerinfo.CommonPlayerInfo(player_id=player1_id).common_player_info.get_dict()['data'][0]
@@ -246,12 +200,10 @@ def refresh_players():
     with open('nba_players.json', 'w') as f:
         json.dump(nba_player_names, f)
 
-    nfl_rosters = nfl.import_seasonal_rosters([2023])
-    nfl_player_names = nfl_rosters['player_name'].tolist()
-    with open('nfl_players.json', 'w') as f:
-        json.dump(nfl_player_names, f)
+
 
     return redirect(url_for('menu'))
+
 
 @app.route('/nba/guess', methods=['POST'])
 def guess():
@@ -274,15 +226,18 @@ def guess():
         if guessed_teammate_id in common_teammates:
             session['successes'] += 1
             result = f"Correct! {guessed_teammate} has played with both {player1_name} and {player2_name}."
-            guessed_teammate_image = get_player_image(guessed_teammate_id, 'nba')
-            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=True, guessed_teammate_image=guessed_teammate_image)
+            display_image = get_player_image(guessed_teammate_id, 'nba')
+            print(f"Guessed Teammate Image URL: {display_image}")  # For debugging
+            
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=True, display_image=display_image)
         else:
             correct_teammate_id = random.choice(list(common_teammates))
             correct_teammate_info = commonplayerinfo.CommonPlayerInfo(player_id=correct_teammate_id).common_player_info.get_dict()['data'][0]
             correct_teammate_name = correct_teammate_info[3]
-            correct_teammate_image = get_player_image(correct_teammate_id, 'nba')
+            display_image = get_player_image(correct_teammate_id, 'nba')
+            print(f"Correct Teammate Image URL: {display_image}")  # For debugging
             result = f"{guessed_teammate} has not played with both {player1_name} and {player2_name}. One correct answer: {correct_teammate_name}. Try again."
-            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=False, correct_teammate_name=correct_teammate_name, correct_teammate_image=correct_teammate_image)
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=False, correct_teammate_name=correct_teammate_name, display_image=display_image)
 
     elif question_type == 'team_and_year':
         guessed_team = request.form['guessed_team']
@@ -294,12 +249,35 @@ def guess():
         if correct_guesses:
             session['successes'] += 1
             result = f"Correct! They played for {guessed_team} in {guessed_year}."
-            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=True)
+            team_id = correct_guesses[0][0]  # Get the team ID from the first correct guess
+            display_image = get_team_logo_url(team_id)
+            print(f"Correct Teammate Image URL: {display_image}")  # For debugging
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=True, display_image=display_image)
         else:
             # Pick an example year to show the user
             example_team, example_year = correct_team_years[0]  # Pick the first correct answer as an example
-            result = f"{player1_name} and {player2_name} did not both play for {guessed_team} in {guessed_year} year. Example: They played for {example_team} in {example_year}. Try again."
-            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=False)
+            team_id = example_team  # Assume that the team ID is stored in the variable
+            display_image = get_team_logo_url(team_id)
+            print(f"Correct Teammate Image URL: {display_image}")  # For debugging
+            result = f"{player1_name} and {player2_name} did not both play for {guessed_team} in {guessed_year}. Example: They played for {example_team} in {example_year}. Try again."
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=False, display_image=display_image)
+        
+    elif question_type == 'headshot':
+        guessed_player = request.form['guessed_player']
+        guessed_player_id = get_player_id(guessed_player, 'nba')
+        correct_player_id = session.get('player_id')
+
+        if guessed_player_id == correct_player_id:
+            session['successes'] += 1
+            result = f"Correct! The player is {guessed_player}."
+            display_image = get_player_image(correct_player_id, 'nba')
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=True, display_image=display_image)
+        else:
+            player_info = commonplayerinfo.CommonPlayerInfo(player_id=correct_player_id).common_player_info.get_dict()['data'][0]
+            correct_player_name = player_info[3]
+            result = f"Incorrect. The correct player was {correct_player_name}."
+            display_image = get_player_image(correct_player_id, 'nba')
+            return render_template('result.html', sport='nba', result=result, rounds=session['rounds'], successes=session['successes'], win=False, display_image=display_image)
 
 
 @app.route('/reset')
@@ -333,32 +311,39 @@ def get_teams_and_years():
 
 def find_two_players_with_common_team_and_year():
     active_player_ids = get_active_player_ids('nba')
->>>>>>> Stashed changes
 
     while True:
+        # Step 1: Select the first player randomly
         player1_id = random.choice(active_player_ids)
+        
+        # Step 2: Retrieve the player's career stats
         player1_stats = playercareerstats.PlayerCareerStats(player_id=player1_id).get_data_frames()[0]
         
+        # Step 3: Loop to find a valid team/season with a non-empty roster
         while True:
+            # Randomly select a row (season/team) from player1's stats
             selected_row = player1_stats.sample(n=1).iloc[0]
             common_team_id = selected_row['TEAM_ID']
             common_year = selected_row['SEASON_ID']
             
-            roster = get_team_roster(common_team_id, common_year)
+            # Retrieve the team roster for that season
+            roster = get_team_roster(common_team_id, common_year, 'nba')
+            
+            # Check if the roster is not empty
             if roster:
-                break
+                break  # Exit loop if a valid roster is found
         
+        # Step 4: Randomly select a teammate from the roster
         player2_id = random.choice(roster)
         
+        # Ensure Player 2 is not the same as Player 1
         if player2_id == player1_id:
-            continue
+            continue  # Retry if the same player is selected
         
-<<<<<<< Updated upstream
-        player1_teammates = get_player_teammates(player1_id)
-        player2_teammates = get_player_teammates(player2_id)
-        common_teammates = player1_teammates.intersection(player2_teammates)
-=======
+        # Step 5: Retrieve Player 2's career stats
         player2_stats = playercareerstats.PlayerCareerStats(player_id=player2_id).get_data_frames()[0]
+        
+        # Step 6: Ensure they played on the same team in the same season(s)
         common_teams = player1_stats.merge(player2_stats, on=['TEAM_ID', 'SEASON_ID'], suffixes=('_player1', '_player2'))
 
         if not common_teams.empty:
@@ -367,13 +352,13 @@ def find_two_players_with_common_team_and_year():
                 common_team_id = common_team['TEAM_ID']
                 common_year = common_team['SEASON_ID']
                 
+                # Get team info (e.g., city and nickname)
                 team_info = get_team_info(common_team_id)
                 common_team_name = f"{team_info['CITY']} {team_info['NICKNAME']}"
                 
                 common_team_years.append((common_team_name, common_year))
             
             return player1_id, player2_id, common_team_years
-
 
 
 
@@ -401,69 +386,59 @@ def get_team_info(team_id):
     }
     return team_info
 
+def get_team_logo_url(team_name):
+    team_id = get_team_id(team_name)
+    if team_id:
+        return f"https://cdn.nba.com/logos/nba/{team_id}/primary/L/logo.svg"
+    return None
+
+
+
+
+def get_team_id(team_name):
+    team_id_mapping = {
+        "Atlanta Hawks": 1610612737,
+        "Boston Celtics": 1610612738,
+        "Brooklyn Nets": 1610612751,
+        "Charlotte Hornets": 1610612766,
+        "Chicago Bulls": 1610612741,
+        "Cleveland Cavaliers": 1610612739,
+        "Dallas Mavericks": 1610612742,
+        "Denver Nuggets": 1610612743,
+        "Detroit Pistons": 1610612765,
+        "Golden State Warriors": 1610612744,
+        "Houston Rockets": 1610612745,
+        "Indiana Pacers": 1610612754,
+        "Los Angeles Clippers": 1610612746,
+        "Los Angeles Lakers": 1610612747,
+        "Memphis Grizzlies": 1610612763,
+        "Miami Heat": 1610612748,
+        "Milwaukee Bucks": 1610612749,
+        "Minnesota Timberwolves": 1610612750,
+        "New Orleans Pelicans": 1610612740,
+        "New York Knicks": 1610612752,
+        "Oklahoma City Thunder": 1610612760,
+        "Orlando Magic": 1610612753,
+        "Philadelphia 76ers": 1610612755,
+        "Phoenix Suns": 1610612756,
+        "Portland Trail Blazers": 1610612757,
+        "Sacramento Kings": 1610612758,
+        "San Antonio Spurs": 1610612759,
+        "Toronto Raptors": 1610612761,
+        "Utah Jazz": 1610612762,
+        "Washington Wizards": 1610612764
+    }
+    return team_id_mapping.get(team_name)
 
 
 
 
 
->>>>>>> Stashed changes
 
 
-@app.route('/')
-def index():
-    if 'rounds' not in session:
-        session['rounds'] = 0
-    if 'successes' not in session:
-        session['successes'] = 0
 
-    player1_id, player2_id, common_teammates = find_two_players_with_common_teammate()
-    player1_info = commonplayerinfo.CommonPlayerInfo(player_id=player1_id).common_player_info.get_dict()['data'][0]
-    player2_info = commonplayerinfo.CommonPlayerInfo(player_id=player2_id).common_player_info.get_dict()['data'][0]
-
-    player1_name = player1_info[3]
-    player2_name = player2_info[3]
-
-    player1_image = get_player_image(player1_id)
-    player2_image = get_player_image(player2_id)
-
-    session['common_teammates'] = list(common_teammates)
-
-    return render_template('index.html', player1_name=player1_name, player2_name=player2_name, player1_image=player1_image, player2_image=player2_image, common_teammates=common_teammates, rounds=session['rounds'], successes=session['successes'])
-
-@app.route('/guess', methods=['POST'])
-def guess():
-    player1_name = request.form['player1_name']
-    player2_name = request.form['player2_name']
-    guessed_teammate = request.form['guessed_teammate']
-
-    guessed_teammate_id = get_player_id(guessed_teammate)
-    player1_id = get_player_id(player1_name)
-    player2_id = get_player_id(player2_name)
-
-    player1_teammates = get_player_teammates(player1_id)
-    player2_teammates = get_player_teammates(player2_id)
-    common_teammates = player1_teammates.intersection(player2_teammates)
-
-    session['rounds'] += 1
-
-    if guessed_teammate_id in common_teammates:
-        session['successes'] += 1
-        result = f"Correct! {guessed_teammate} has played with both {player1_name} and {player2_name}."
-        guessed_teammate_image = get_player_image(guessed_teammate_id)
-        return render_template('result.html', result=result, rounds=session['rounds'], successes=session['successes'], win=True, guessed_teammate_image=guessed_teammate_image)
-    else:
-        correct_teammate_id = random.choice(list(common_teammates))
-        correct_teammate_info = commonplayerinfo.CommonPlayerInfo(player_id=correct_teammate_id).common_player_info.get_dict()['data'][0]
-        correct_teammate_name = correct_teammate_info[3]
-        correct_teammate_image = get_player_image(correct_teammate_id)
-        result = f"{guessed_teammate} has not played with both {player1_name} and {player2_name}. Try again."
-        return render_template('result.html', result=result, rounds=session['rounds'], successes=session['successes'], win=False, correct_teammate_name=correct_teammate_name, correct_teammate_image=correct_teammate_image)
-
-@app.route('/reset')
-def reset():
-    session['rounds'] = 0
-    session['successes'] = 0
-    return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
+else:
+    application = app
