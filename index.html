@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NBA Connection Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            text-align: center;
+            padding: 50px;
+        }
+        .player-card {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .player-card img {
+            border-radius: 50%;
+            width: 200px;
+            height: 150px;
+        }
+        .player-card h2 {
+            margin: 10px 0;
+        }
+        .form-container {
+            margin-top: 30px;
+            position: relative; /* Added to position suggestions relative to this container */
+        }
+        .form-container input, .form-container button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .autocomplete-suggestions {
+            border: 1px solid #e4e4e4;
+            background: #fff;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            z-index: 1000;
+            left: 0; /* Adjust to position correctly under the input field */
+            width: calc(100% - 20px); /* Match the width of the input field */
+        }
+        .autocomplete-suggestion {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .autocomplete-suggestion:hover {
+            background: #e4e4e4;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <p>Rounds: {{ rounds }}</p>
+        <p>Successes: {{ successes }}</p>
+        <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
+    </div>
+    <h1>NBA Connection Game</h1>
+    {% if question_type == 'headshot' %}
+        <div class="player-card">
+            <img src="{{ player_image }}" alt="Player Headshot">
+            <h2>Guess the Player!</h2>
+        </div>
+    {% else %}
+        <div class="player-card">
+            <img src="{{ player1_image }}" alt="{{ player1_name }}">
+            <h2>{{ player1_name }}</h2>
+        </div>
+        <div class="player-card">
+            <img src="{{ player2_image }}" alt="{{ player2_name }}">
+            <h2>{{ player2_name }}</h2>
+        </div>
+    {% endif %}
+    <div class="form-container">
+    <form action="{{ url_for('guess', sport=sport) }}" method="post">
+        <input type="hidden" name="player1_name" value="{{ player1_name }}">
+        <input type="hidden" name="player2_name" value="{{ player2_name }}">
+        
+        {% if question_type == 'teammate' %}
+            <label for="guessed_teammate">Enter the name of the common teammate:</label>
+            <input type="text" id="guessed_teammate" name="guessed_teammate" autocomplete="off">
+        {% elif question_type == 'team_and_year' %}
+            <label for="guessed_team">Enter the team and year they played together:</label>
+            <input type="text" id="guessed_team" name="guessed_team" placeholder="Team Name" autocomplete="off">
+            <input type="text" id="guessed_year" name="guessed_year" placeholder="Year" autocomplete="off">
+        {% elif question_type == 'headshot' %}
+            <label for="guessed_player">Who is this player?</label>
+            <input type="text" id="guessed_player" name="guessed_player" autocomplete="off">
+        {% endif %}
+        
+        <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const teamInput = document.getElementById('guessed_team');
+    const yearInput = document.getElementById('guessed_year');
+    const playerInput = document.getElementById('guessed_teammate');
+    const guessedPlayerInput = document.getElementById('guessed_player');  // New addition for headshot type
+    const suggestionsBox = document.getElementById('autocomplete-suggestions');
+    
+    let teams = [];
+    let years = [];
+    let playerNames = [];
+
+    fetch('/nba/teams-and-years')
+        .then(response => response.json())
+        .then(data => {
+            teams = data.teams;
+            years = data.years;
+        });
+
+    fetch('/nba/players')
+        .then(response => response.json())
+        .then(data => {
+            playerNames = data;
+        });
+
+    if (teamInput) {
+        teamInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredTeams = teams.filter(name => name.toLowerCase().includes(query));
+                filteredTeams.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        teamInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
+    if (yearInput) {
+        yearInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredYears = years.filter(year => year.includes(query));
+                filteredYears.forEach(year => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = year;
+                    div.addEventListener('click', function () {
+                        yearInput.value = year;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
+    if (playerInput) {
+        playerInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredPlayers = playerNames.filter(name => name.toLowerCase().includes(query));
+                filteredPlayers.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        playerInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+    // Autocomplete for guessed_player (headshot question type)
+    if (guessedPlayerInput) {
+        guessedPlayerInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredPlayers = playerNames.filter(name => name.toLowerCase().includes(query));
+                filteredPlayers.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        guessedPlayerInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
+});
+
+</script>
+
+
+</body>
+</html>
