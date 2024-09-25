@@ -66,32 +66,36 @@
         <p>Win Percentage: {{ (successes / rounds * 100) if rounds > 0 else 0 }}%</p>
     </div>
     <h1>NBA Connection Game</h1>
-    <div class="player-card">
-        <img src="{{ player1_image }}" alt="{{ player1_name }}">
-        <h2>{{ player1_name }}</h2>
-    </div>
-    <div class="player-card">
-        <img src="{{ player2_image }}" alt="{{ player2_name }}">
-        <h2>{{ player2_name }}</h2>
-    </div>
+    {% if question_type == 'headshot' %}
+        <div class="player-card">
+            <img src="{{ player_image }}" alt="Player Headshot">
+            <h2>Guess the Player!</h2>
+        </div>
+    {% else %}
+        <div class="player-card">
+            <img src="{{ player1_image }}" alt="{{ player1_name }}">
+            <h2>{{ player1_name }}</h2>
+        </div>
+        <div class="player-card">
+            <img src="{{ player2_image }}" alt="{{ player2_name }}">
+            <h2>{{ player2_name }}</h2>
+        </div>
+    {% endif %}
     <div class="form-container">
-<<<<<<< Updated upstream
-        <form action="{{ url_for('guess') }}" method="post">
-            <input type="hidden" name="player1_name" value="{{ player1_name }}">
-            <input type="hidden" name="player2_name" value="{{ player2_name }}">
-=======
     <form action="{{ url_for('guess', sport=sport) }}" method="post">
         <input type="hidden" name="player1_name" value="{{ player1_name }}">
         <input type="hidden" name="player2_name" value="{{ player2_name }}">
         
         {% if question_type == 'teammate' %}
->>>>>>> Stashed changes
             <label for="guessed_teammate">Enter the name of the common teammate:</label>
             <input type="text" id="guessed_teammate" name="guessed_teammate" autocomplete="off">
         {% elif question_type == 'team_and_year' %}
             <label for="guessed_team">Enter the team and year they played together:</label>
             <input type="text" id="guessed_team" name="guessed_team" placeholder="Team Name" autocomplete="off">
             <input type="text" id="guessed_year" name="guessed_year" placeholder="Year" autocomplete="off">
+        {% elif question_type == 'headshot' %}
+            <label for="guessed_player">Who is this player?</label>
+            <input type="text" id="guessed_player" name="guessed_player" autocomplete="off">
         {% endif %}
         
         <div id="autocomplete-suggestions" class="autocomplete-suggestions"></div>
@@ -99,22 +103,17 @@
     </form>
 </div>
 
-<<<<<<< Updated upstream
-            fetch('/players')
-                .then(response => response.json())
-                .then(data => playerNames = data);
-=======
 <script>
     document.addEventListener('DOMContentLoaded', function () {
     const teamInput = document.getElementById('guessed_team');
     const yearInput = document.getElementById('guessed_year');
     const playerInput = document.getElementById('guessed_teammate');
+    const guessedPlayerInput = document.getElementById('guessed_player');  // New addition for headshot type
     const suggestionsBox = document.getElementById('autocomplete-suggestions');
     
     let teams = [];
     let years = [];
     let playerNames = [];
->>>>>>> Stashed changes
 
     fetch('/nba/teams-and-years')
         .then(response => response.json())
@@ -191,6 +190,28 @@
             }
         });
     }
+    // Autocomplete for guessed_player (headshot question type)
+    if (guessedPlayerInput) {
+        guessedPlayerInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+
+            if (query.length > 0) {
+                const filteredPlayers = playerNames.filter(name => name.toLowerCase().includes(query));
+                filteredPlayers.forEach(name => {
+                    const div = document.createElement('div');
+                    div.classList.add('autocomplete-suggestion');
+                    div.textContent = name;
+                    div.addEventListener('click', function () {
+                        guessedPlayerInput.value = name;
+                        suggestionsBox.innerHTML = '';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+            }
+        });
+    }
+
 });
 
 </script>
